@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acid-Base Sorter - Science Minigame</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+
+  body {
+    background: linear-gradient(135deg, #134e5e, #71b280);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  #game-container {
+    position: relative;
+    width: 480px;
+    height: 720px;
+    max-width: 100vw;
+    max-height: 100vh;
+    background: #0d2b2e;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(0,0,0,0.6);
+  }
+
+  .screen {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #fff;
+    padding: 20px;
+  }
+
+  .hidden { display: none !important; }
+
+  /* START SCREEN */
+  #start-screen h1 {
+    font-size: 2.2em;
+    margin-bottom: 10px;
+    color: #ffe66d;
+    text-shadow: 2px 2px 0 #0a3d3d;
+  }
+  #start-screen p { margin: 8px 0; font-size: 1.05em; line-height: 1.5; }
+
+  .btn {
+    margin-top: 18px;
+    padding: 12px 30px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #fff;
+    background: linear-gradient(180deg, #ff8c42, #ff5e62);
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #b33a3a;
+    transition: transform 0.1s;
+  }
+  .btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #b33a3a; }
+
+  .btn-secondary {
+    background: linear-gradient(180deg, #4fb0ff, #2378d6);
+    box-shadow: 0 5px 0 #1a5599;
+  }
+  .btn-secondary:active { box-shadow: 0 1px 0 #1a5599; }
+
+  /* INSTRUCTIONS */
+  #instructions-screen ul {
+    text-align: left;
+    margin: 14px 0;
+    line-height: 1.7;
+    max-width: 380px;
+  }
+  #instructions-screen li { margin-bottom: 6px; }
+
+  /* HUD */
+  #hud {
+    position: absolute;
+    top: 0; left: 0; width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 14px;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1em;
+    z-index: 5;
+    background: rgba(0,0,0,0.25);
+    box-sizing: border-box;
+  }
+  #hud span { display: block; }
+  #hud .label { font-size: 0.7em; opacity: 0.7; font-weight: normal; }
+
+  #instruction-banner {
+    position: absolute;
+    top: 50px; left: 0; width: 100%;
+    text-align: center;
+    color: #ffe66d;
+    font-size: 1.15em;
+    font-weight: bold;
+    z-index: 5;
+    text-shadow: 1px 1px 0 #000;
+    padding: 0 10px;
+  }
+
+  /* GAME AREA */
+  #game-screen { padding: 0; }
+  #play-area {
+    position: relative;
+    width: 100%; height: 100%;
+    background: linear-gradient(180deg, #1f6f78 0%, #0d2b2e 100%);
+    overflow: hidden;
+  }
+
+  .falling-item {
+    position: absolute;
+    width: 100px; height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95em;
+    font-weight: bold;
+    color: #fff;
+    text-align: center;
+    line-height: 1.1;
+    background: radial-gradient(circle at 30% 30%, #6dd5fa, #2980b9);
+    box-shadow: 0 0 10px rgba(255,255,255,0.4);
+    user-select: none;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  /* BIN ROW (3 bins) */
+  #bin-row {
+    position: absolute;
+    bottom: 14px; left: 0; width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4%;
+    box-sizing: border-box;
+  }
+
+  .bin {
+    width: 30%;
+    height: 80px;
+    border-radius: 12px 12px 6px 6px;
+    border: 3px solid #444;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #222;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    transition: transform 0.15s;
+  }
+  .bin.acid { background: linear-gradient(180deg, #ff6b6b, #c0392b); color: #fff; }
+  .bin.neutral { background: linear-gradient(180deg, #95e1d3, #38ada9); color: #023; }
+  .bin.base { background: linear-gradient(180deg, #a8e6cf, #2ecc71); color: #023; }
+  .bin .emoji { font-size: 1.6em; }
+  .bin.active { transform: scale(1.08); box-shadow: 0 0 18px rgba(255,255,255,0.7); }
+
+  /* FLOATING FEEDBACK TEXT */
+  .feedback {
+    position: absolute;
+    font-weight: bold;
+    font-size: 1.3em;
+    pointer-events: none;
+    animation: floatUp 0.8s ease-out forwards;
+    z-index: 6;
+  }
+  @keyframes floatUp {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-50px); }
+  }
+
+  /* END SCREEN */
+  #end-screen h1 { color: #ffe66d; font-size: 2em; margin-bottom: 6px; }
+  #stars { font-size: 2.6em; margin: 14px 0; letter-spacing: 6px; }
+  .star { color: #555; transition: color 0.3s, transform 0.3s; display: inline-block; }
+  .star.filled { color: #ffe66d; transform: scale(1.2); text-shadow: 0 0 10px #ffe66d; }
+  #end-stats { font-size: 1.15em; line-height: 1.8; margin-bottom: 10px; }
+
+  /* TIME UP BANNER */
+  #time-up-banner {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: #fff;
+    font-size: 1.8em;
+    font-weight: bold;
+    z-index: 10;
+  }
+
+  /* SOUND TOGGLE */
+  #sound-toggle {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: rgba(0,0,0,0.4);
+    border: none;
+    color: #fff;
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    font-size: 1.1em;
+    cursor: pointer;
+    z-index: 20;
+  }
+
+  #controls-hint {
+    position: absolute;
+    bottom: 100px; left: 0; width: 100%;
+    text-align: center;
+    font-size: 0.75em;
+    color: rgba(255,255,255,0.5);
+    z-index: 4;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+
+  <button id="sound-toggle" title="Mute/Unmute">🔊</button>
+
+  <!-- START SCREEN -->
+  <div id="start-screen" class="screen">
+    <h1>🧪 Acid-Base Sorter</h1>
+    <p>A quick-thinking science sorting game!<br>Test your knowledge of acids, bases, and neutral substances.</p>
+    <button class="btn" id="btn-start">Start Game</button>
+    <button class="btn btn-secondary" id="btn-instructions">How to Play</button>
+  </div>
+
+  <!-- INSTRUCTIONS SCREEN -->
+  <div id="instructions-screen" class="screen hidden">
+    <h1>How to Play</h1>
+    <ul>
+      <li>🧫 Substances fall from the top of the screen, each with a name and pH-related clue.</li>
+      <li>🗑️ Three bins are at the bottom: <b>Acid</b>, <b>Neutral</b>, and <b>Base</b>.</li>
+      <li>⬅️➡️ Switch the <b>active bin</b> using <b>← →</b> keys, <b>A/D</b>, or by tapping a bin directly.</li>
+      <li>✅ Catch each substance in its correct bin to score points.</li>
+      <li>❌ Wrong bin = lose a life (❤️). Letting it fall also costs a small penalty.</li>
+      <li>⏱️ One continuous timer — sort as many as you can before time runs out!</li>
+      <li>⭐ Earn up to 3 stars based on your final score.</li>
+    </ul>
+    <button class="btn" id="btn-back">Back</button>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="game-screen" class="screen hidden">
+    <div id="hud">
+      <div><span class="label">Score</span><span id="hud-score">0</span></div>
+      <div><span class="label">Time</span><span id="hud-time">60</span></div>
+      <div><span class="label">Lives</span><span id="hud-lives">❤️❤️❤️</span></div>
+    </div>
+    <div id="instruction-banner">Sort each substance into the correct bin!</div>
+    <div id="play-area"></div>
+    <div id="controls-hint">← → / A D to switch bin, or tap a bin</div>
+    <div id="bin-row">
+      <div class="bin acid" data-type="acid"><span class="emoji">🍋</span>Acid</div>
+      <div class="bin neutral" data-type="neutral"><span class="emoji">💧</span>Neutral</div>
+      <div class="bin base" data-type="base"><span class="emoji">🧼</span>Base</div>
+    </div>
+  </div>
+
+  <!-- END SCREEN -->
+  <div id="end-screen" class="screen hidden">
+    <h1 id="end-title">Game Over</h1>
+    <div id="stars">
+      <span class="star" id="star1">★</span>
+      <span class="star" id="star2">★</span>
+      <span class="star" id="star3">★</span>
+    </div>
+    <div id="end-stats"></div>
+    <button class="btn" id="btn-restart">Play Again</button>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  // ====================== AUDIO (Web Audio API - no external files) ======================
+  let audioCtx = null;
+  let muted = false;
+  let bgInterval = null;
+
+  function getCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function beep(freq, duration, type = 'sine', volume = 0.15) {
+    if (muted) return;
+    const ctx = getCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.value = volume;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    osc.stop(ctx.currentTime + duration);
+  }
+
+  const sounds = {
+    correct: () => { beep(880, 0.15, 'triangle', 0.18); beep(1320, 0.15, 'triangle', 0.12); },
+    wrong: () => { beep(180, 0.3, 'sawtooth', 0.2); },
+    start: () => { beep(523, 0.12); setTimeout(()=>beep(659,0.12),120); setTimeout(()=>beep(784,0.18),240); },
+    gameOver: () => { beep(300, 0.25,'sawtooth',0.2); setTimeout(()=>beep(200,0.4,'sawtooth',0.2),200); },
+    win: () => { [523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,0.2,'triangle',0.15), i*150)); }
+  };
+
+  function startBgMusic() {
+    stopBgMusic();
+    // A gentle bubbling/lab-themed arpeggio in a different pattern from game 1
+    const melody = [261, 329, 392, 329, 440, 392, 329, 293];
+    let i = 0;
+    bgInterval = setInterval(() => {
+      if (!muted) beep(melody[i % melody.length], 0.35, 'square', 0.03);
+      i++;
+    }, 350);
+  }
+  function stopBgMusic() {
+    if (bgInterval) clearInterval(bgInterval);
+    bgInterval = null;
+  }
+
+  document.getElementById('sound-toggle').addEventListener('click', () => {
+    muted = !muted;
+    document.getElementById('sound-toggle').textContent = muted ? '🔇' : '🔊';
+  });
+
+  // ====================== GAME STATE ======================
+  const GAME_TIME = 60; // total seconds
+  const STARTING_LIVES = 3;
+
+  let score = 0;
+  let lives = STARTING_LIVES;
+  let timeLeft = GAME_TIME;
+  let timerInterval = null;
+  let spawnInterval = null;
+  let fallAnimFrame = null;
+  let activeBinIndex = 1; // start on "neutral"
+  let playAreaWidth = 0;
+  let playAreaHeight = 0;
+  let activeItems = [];
+  let gameActive = false;
+
+  // ====================== SUBSTANCE DATA ======================
+  // type: 'acid' | 'neutral' | 'base'
+  const substances = [
+    { name: "Lemon Juice", clue: "pH ~2", type: "acid" },
+    { name: "Vinegar", clue: "pH ~3", type: "acid" },
+    { name: "Stomach Acid", clue: "pH ~1.5", type: "acid" },
+    { name: "Soft Drink", clue: "pH ~3", type: "acid" },
+    { name: "Black Coffee", clue: "pH ~5", type: "acid" },
+    { name: "Tomato Juice", clue: "pH ~4", type: "acid" },
+    { name: "Orange Juice", clue: "pH ~3.5", type: "acid" },
+    { name: "Apple Juice", clue: "pH ~3.5", type: "acid" },
+    { name: "Battery Acid", clue: "pH ~0.5", type: "acid" },
+    { name: "Hydrochloric Acid", clue: "pH ~1", type: "acid" },
+    { name: "Sulfuric Acid", clue: "pH ~1", type: "acid" },
+    { name: "Yogurt", clue: "pH ~4.5", type: "acid" },
+    { name: "Rainwater", clue: "pH ~5.5", type: "acid" },
+    { name: "Wine", clue: "pH ~3.5", type: "acid" },
+    { name: "Cheese", clue: "pH ~5", type: "acid" },
+
+    { name: "Pure Water", clue: "pH = 7", type: "neutral" },
+    { name: "Table Salt Solution", clue: "pH = 7", type: "neutral" },
+    { name: "Milk", clue: "pH ~6.5", type: "neutral" },
+    { name: "Sugar Solution", clue: "pH ~7", type: "neutral" },
+    { name: "Blood", clue: "pH ~7.4", type: "neutral" },
+    { name: "Saliva", clue: "pH ~6.8", type: "neutral" },
+
+    { name: "Baking Soda", clue: "pH ~9", type: "base" },
+    { name: "Soap", clue: "pH ~10", type: "base" },
+    { name: "Toothpaste", clue: "pH ~9", type: "base" },
+    { name: "Ammonia Cleaner", clue: "pH ~11", type: "base" },
+    { name: "Bleach", clue: "pH ~12", type: "base" },
+    { name: "Antacid Tablet", clue: "pH ~10", type: "base" },
+    { name: "Egg White", clue: "pH ~8", type: "base" },
+    { name: "Seawater", clue: "pH ~8", type: "base" },
+    { name: "Drain Cleaner", clue: "pH ~13", type: "base" },
+    { name: "Sodium Hydroxide", clue: "pH ~14", type: "base" },
+    { name: "Milk of Magnesia", clue: "pH ~10.5", type: "base" },
+    { name: "Hand Soap", clue: "pH ~9.5", type: "base" },
+  ];
+
+  // ====================== DOM REFS ======================
+  const startScreen = document.getElementById('start-screen');
+  const instructionsScreen = document.getElementById('instructions-screen');
+  const gameScreen = document.getElementById('game-screen');
+  const endScreen = document.getElementById('end-screen');
+  const playArea = document.getElementById('play-area');
+  const hudScore = document.getElementById('hud-score');
+  const hudTime = document.getElementById('hud-time');
+  const hudLives = document.getElementById('hud-lives');
+  const bins = Array.from(document.querySelectorAll('.bin'));
+
+  function showScreen(el) {
+    [startScreen, instructionsScreen, gameScreen, endScreen].forEach(s => s.classList.add('hidden'));
+    el.classList.remove('hidden');
+  }
+
+  // ====================== NAVIGATION ======================
+  document.getElementById('btn-instructions').addEventListener('click', () => showScreen(instructionsScreen));
+  document.getElementById('btn-back').addEventListener('click', () => showScreen(startScreen));
+  document.getElementById('btn-start').addEventListener('click', () => {
+    sounds.start();
+    startGame();
+  });
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    sounds.start();
+    startGame();
+  });
+
+  // ====================== GAME SETUP ======================
+  function startGame() {
+    score = 0;
+    lives = STARTING_LIVES;
+    timeLeft = GAME_TIME;
+    activeBinIndex = 1;
+    updateHud();
+    updateActiveBin();
+    showScreen(gameScreen);
+
+    requestAnimationFrame(() => {
+      playAreaWidth = playArea.clientWidth;
+      playAreaHeight = playArea.clientHeight;
+      startBgMusic();
+      gameActive = true;
+      startTimer();
+      startSpawning();
+      startFalling();
+    });
+  }
+
+  function updateHud() {
+    hudScore.textContent = score;
+    hudTime.textContent = timeLeft;
+    hudLives.textContent = '❤️'.repeat(Math.max(lives,0)) + '🖤'.repeat(Math.max(STARTING_LIVES-lives,0));
+  }
+
+  // ====================== TIMER ======================
+  function startTimer() {
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      hudTime.textContent = timeLeft;
+      if (timeLeft <= 0) {
+        endGame(true);
+      }
+    }, 1000);
+  }
+
+  // ====================== SPAWNING ======================
+  function startSpawning() {
+    clearInterval(spawnInterval);
+    spawnItem();
+    spawnInterval = setInterval(spawnItem, 1300);
+  }
+
+  function spawnItem() {
+    if (!gameActive) return;
+    const data = substances[Math.floor(Math.random() * substances.length)];
+
+    const el = document.createElement('div');
+    el.className = 'falling-item';
+    el.innerHTML = `${data.name}<br><span style="font-size:0.8em;opacity:0.85">${data.clue}</span>`;
+    el.dataset.type = data.type;
+
+    const x = Math.random() * (playAreaWidth - 100);
+    el.style.left = x + 'px';
+    el.style.top = '-60px';
+    el.dataset.speed = (1 + Math.random() * 0.8).toFixed(2);
+
+    el.addEventListener('click', () => handleClickItem(el));
+    playArea.appendChild(el);
+    activeItems.push(el);
+  }
+
+  // ====================== FALLING ANIMATION ======================
+  function startFalling() {
+    cancelAnimationFrame(fallAnimFrame);
+    function tick() {
+      if (!gameActive) return;
+      const binWidth = playAreaWidth * 0.3;
+      const binsAreaPadding = playAreaWidth * 0.04;
+      const binsBottom = playAreaHeight; // bins sit just below play-area visually, but collision uses bottom edge
+
+      activeItems = activeItems.filter(el => {
+        let top = parseFloat(el.style.top);
+        top += parseFloat(el.dataset.speed);
+        el.style.top = top + 'px';
+
+        const size = 56;
+
+        // Reached bottom of play area without being clicked -> always a miss
+        if (top + size >= playAreaHeight) {
+          handleMiss(el);
+          return false;
+        }
+        return true;
+      });
+
+      fallAnimFrame = requestAnimationFrame(tick);
+    }
+    fallAnimFrame = requestAnimationFrame(tick);
+  }
+
+  // Clicking an item directly sorts it into the currently active bin
+  function handleClickItem(el) {
+    if (!gameActive || !el.isConnected) return;
+    checkCatch(el, activeBinIndex);
+  }
+
+  function checkCatch(el, binIndex) {
+    if (!el.isConnected) return;
+    const type = el.dataset.type;
+    const binType = bins[binIndex].dataset.type;
+    const correct = type === binType;
+
+    const left = el.style.left;
+    const top = el.style.top;
+
+    if (correct) {
+      score += 10;
+      sounds.correct();
+      showFeedback('+10', left, top, '#7CFC00');
+    } else {
+      lives -= 1;
+      sounds.wrong();
+      showFeedback('Wrong Bin!', left, top, '#ff5e62');
+    }
+
+    el.remove();
+    updateHud();
+
+    if (lives <= 0) {
+      endGame(false);
+    }
+  }
+
+  // Item fell off the bottom without being sorted -> always a miss (no points)
+  function handleMiss(el) {
+    if (!el.isConnected) return;
+    lives -= 1;
+    sounds.wrong();
+    showFeedback('Missed!', el.style.left, el.style.top, '#ff5e62');
+    el.remove();
+    updateHud();
+
+    if (lives <= 0) {
+      endGame(false);
+    }
+  }
+
+  function showFeedback(text, left, top, color) {
+    const fb = document.createElement('div');
+    fb.className = 'feedback';
+    fb.textContent = text;
+    fb.style.left = left;
+    fb.style.top = top;
+    fb.style.color = color;
+    playArea.appendChild(fb);
+    setTimeout(() => fb.remove(), 800);
+  }
+
+  // ====================== BIN CONTROLS ======================
+  function updateActiveBin() {
+    bins.forEach((b, i) => b.classList.toggle('active', i === activeBinIndex));
+  }
+
+  bins.forEach((b, i) => {
+    b.addEventListener('click', () => {
+      activeBinIndex = i;
+      updateActiveBin();
+    });
+  });
+
+  document.addEventListener('keydown', e => {
+    if (!gameActive) return;
+    const key = e.key.toLowerCase();
+    if (key === 'arrowleft' || key === 'a') {
+      activeBinIndex = Math.max(0, activeBinIndex - 1);
+      updateActiveBin();
+    } else if (key === 'arrowright' || key === 'd') {
+      activeBinIndex = Math.min(2, activeBinIndex + 1);
+      updateActiveBin();
+    }
+  });
+
+  // ====================== END GAME FUNCTION ======================
+  function endGame(completedTime) {
+    gameActive = false;
+    clearInterval(timerInterval);
+    clearInterval(spawnInterval);
+    cancelAnimationFrame(fallAnimFrame);
+    activeItems.forEach(el => el.remove());
+    activeItems = [];
+    stopBgMusic();
+
+    const maxScore = 200; // rough estimate for star thresholds
+    let starCount = 0;
+    if (score >= maxScore * 0.7) starCount = 3;
+    else if (score >= maxScore * 0.4) starCount = 2;
+    else if (score > 0) starCount = 1;
+
+    document.getElementById('end-title').textContent =
+      lives > 0 ? '⏰ Time\'s Up!' : '💥 Out of Lives!';
+
+    document.getElementById('end-stats').innerHTML =
+      `Final Score: <b>${score}</b><br>Lives Remaining: <b>${Math.max(lives,0)}</b>`;
+
+    for (let i = 1; i <= 3; i++) {
+      document.getElementById('star' + i).classList.remove('filled');
+    }
+
+    if (lives > 0 && starCount >= 2) sounds.win(); else sounds.gameOver();
+
+    showScreen(endScreen);
+
+    for (let i = 1; i <= starCount; i++) {
+      setTimeout(() => {
+        document.getElementById('star' + i).classList.add('filled');
+        beep(700 + i*150, 0.2, 'triangle', 0.15);
+      }, i * 400);
+    }
+  }
+
+  // Resize handling
+  window.addEventListener('resize', () => {
+    if (!gameScreen.classList.contains('hidden')) {
+      playAreaWidth = playArea.clientWidth;
+      playAreaHeight = playArea.clientHeight;
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
