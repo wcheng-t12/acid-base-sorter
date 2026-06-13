@@ -4,9 +4,7 @@
 **File:** `science-game.html`
 
 ## 🌐 Play Online
-```
 https://wcheng-t12.github.io/acid-base-sorter/
-```
 
 ## 📖 About
 A real-time sorting game. Common substances — from lemon juice to bleach — fall from the top of the screen, each showing its name and approximate pH. Three bins sit at the bottom: **Acid**, **Neutral**, and **Base**. Switch your active bin and click each substance to sort it correctly before it reaches the bottom.
