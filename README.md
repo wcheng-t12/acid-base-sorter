@@ -5,7 +5,7 @@
 
 ## 🌐 Play Online
 ```
-https://wcheng-t12.github.io/pH_Sort_Challenge/
+https://wcheng-t12.github.io/acid-base-sorter/
 ```
 
 ## 📖 About
